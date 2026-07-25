@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniFile Studio — Universal File Viewer & Converter</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>" />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  
+  <!-- React & ReactDOM UMD -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel Standalone -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- JSZip, PapaParse, jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    /* Theme Definitions */
+    :root[data-theme="futuristic"] {
+      --bg-primary: #070a14;
+      --bg-surface: rgba(15, 23, 42, 0.78);
+      --bg-card: rgba(18, 28, 51, 0.88);
+      --glass-border: rgba(99, 102, 241, 0.25);
+      --glass-border-active: #06b6d4;
+      --accent-primary: #6366f1;
+      --accent-cyan: #06b6d4;
+      --accent-pink: #ec4899;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-main: 'Inter', system-ui, sans-serif;
+      --font-heading: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-glow: 0 0 25px rgba(6, 182, 212, 0.35);
+      --badge-bg: rgba(6, 182, 212, 0.2);
+    }
+
+    :root[data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-surface: rgba(30, 41, 59, 0.8);
+      --bg-card: rgba(30, 41, 59, 0.95);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --glass-border-active: rgba(255, 255, 255, 0.3);
+      --accent-primary: #3b82f6;
+      --accent-cyan: #38bdf8;
+      --accent-pink: #f43f5e;
+      --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --font-main: 'Inter', system-ui, sans-serif;
+      --font-heading: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.25);
+      --badge-bg: rgba(59, 130, 246, 0.2);
+    }
+
+    :root[data-theme="light"] {
+      --bg-primary: #f1f5f9;
+      --bg-surface: rgba(255, 255, 255, 0.85);
+      --bg-card: rgba(255, 255, 255, 0.95);
+      --glass-border: rgba(203, 213, 225, 0.8);
+      --glass-border-active: #3b82f6;
+      --accent-primary: #2563eb;
+      --accent-cyan: #0284c7;
+      --accent-pink: #db2777;
+      --accent-gradient: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --font-main: 'Inter', system-ui, sans-serif;
+      --font-heading: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-glow: 0 10px 25px rgba(37, 99, 235, 0.15);
+      --badge-bg: rgba(37, 99, 235, 0.12);
+    }
+
+    :root[data-theme="retro"] {
+      --bg-primary: #120424;
+      --bg-surface: rgba(36, 12, 62, 0.85);
+      --bg-card: rgba(48, 16, 82, 0.95);
+      --glass-border: rgba(255, 42, 109, 0.4);
+      --glass-border-active: #05d9e8;
+      --accent-primary: #ff2a6d;
+      --accent-cyan: #05d9e8;
+      --accent-pink: #ff71ce;
+      --accent-gradient: linear-gradient(135deg, #ff2a6d 0%, #05d9e8 100%);
+      --text-main: #ff71ce;
+      --text-muted: #b5b8dc;
+      --font-main: 'JetBrains Mono', monospace;
+      --font-heading: 'Press Start 2P', monospace;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-glow: 0 0 25px rgba(255, 42, 109, 0.5);
+      --badge-bg: rgba(255, 42, 109, 0.3);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      padding: 24px 16px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(9, 13, 22, 0.8); }
+    ::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: 10px; }
+
+    .glass-panel {
+      background: var(--bg-surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .glass-card:hover {
+      border-color: var(--glass-border-active);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 16px;
+      font-family: var(--font-main);
+      font-weight: 600;
+      font-size: 0.88rem;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      outline: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border: 1px solid var(--glass-border);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.5);
+    }
+
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.35); color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--badge-bg);
+      color: var(--accent-cyan);
+      border: 1px solid var(--glass-border);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: rgba(30, 41, 59, 0.9);
+      color: var(--accent-cyan);
+      padding: 10px 14px;
+      font-weight: 600;
+      border-bottom: 2px solid var(--glass-border);
+      position: sticky;
+      top: 0;
+    }
+
+    .data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+  </style>
+</head>
+<body data-theme="futuristic">
+  <div id="root"></div>
+
+  <!-- Global Drag & Drop Lock -->
+  <script>
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      window.addEventListener(eventName, function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }, false);
+    });
+  </script>
+
+  <!-- React App Script -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // SVG Icons
+    const Icons = {
+      Layers: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
+      Upload: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+      Shield: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+      Eye: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+      Refresh: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
+      Download: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+      Trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+      Close: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+      Archive: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>,
+      Sparkles: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>,
+      ZoomIn: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>,
+      ZoomOut: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>,
+      Rotate: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>,
+      Grid: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+      List: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+      Search: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    };
+
+    function getCategory(file) {
+      const type = file.type || '';
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      if (type.startsWith('image/') || ['jpg','jpeg','png','webp','gif','bmp','svg','ico'].includes(ext)) return 'image';
+      if (type.startsWith('audio/') || ['mp3','wav','ogg','aac','m4a'].includes(ext)) return 'audio';
+      if (type.startsWith('video/') || ['mp4','webm','mkv','avi','mov'].includes(ext)) return 'video';
+      if (type === 'application/pdf' || ext === 'pdf') return 'pdf';
+      if (ext === 'csv') return 'csv';
+      return 'document';
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Main App
+    function App() {
+      const [items, setItems] = useState([]);
+      const [selectedIds, setSelectedIds] = useState([]);
+      const [viewerItem, setViewerItem] = useState(null);
+      const [convertItems, setConvertItems] = useState(null);
+      const [toast, setToast] = useState('');
+      const [targetFormat, setTargetFormat] = useState('png');
+      const [quality, setQuality] = useState(0.90);
+      const [isProcessing, setIsProcessing] = useState(false);
+      const [viewerContent, setViewerContent] = useState(null);
+      const [csvParsed, setCsvParsed] = useState(null);
+      const [zoomScale, setZoomScale] = useState(1);
+      const [rotation, setRotation] = useState(0);
+
+      // UI Mods State
+      const [theme, setTheme] = useState('retro');
+      const [viewLayout, setViewLayout] = useState('grid');
+      const [searchQuery, setSearchQuery] = useState('');
+      const fileInputRef = useRef(null);
+
+      const showToast = (msg) => {
+        setToast(msg);
+        setTimeout(() => setToast(''), 3000);
+      };
+
+      useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+      }, [theme]);
+
+      const handleFilesAdded = (files) => {
+        if (!files || files.length === 0) return;
+        const newItems = Array.from(files).map(file => ({
+          id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          file,
+          isConverted: false
+        }));
+        setItems(prev => [...newItems, ...prev]);
+        showToast(`Loaded ${newItems.length} file(s)`);
+      };
+
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (e.key === 'Escape') {
+            setViewerItem(null);
+            setConvertItems(null);
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, []);
+
+      useEffect(() => {
+        if (!viewerItem) {
+          setViewerContent(null);
+          setCsvParsed(null);
+          setZoomScale(1);
+          setRotation(0);
+          return;
+        }
+        const file = viewerItem.file;
+        const cat = getCategory(file);
+
+        if (cat === 'csv') {
+          file.text().then(text => {
+            const parsed = window.Papa.parse(text, { header: true, skipEmptyLines: true });
+            setCsvParsed(parsed);
+            setViewerContent(text);
+          });
+        } else if (cat === 'document') {
+          file.text().then(text => setViewerContent(text));
+        } else {
+          setViewerContent(URL.createObjectURL(file));
+        }
+      }, [viewerItem]);
+
+      const handleConvertAction = async () => {
+        if (!convertItems || convertItems.length === 0) return;
+        setIsProcessing(true);
+
+        try {
+          const newConvertedItems = [];
+          for (const item of convertItems) {
+            const file = item.file;
+            const cat = getCategory(file);
+            const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+
+            if (cat === 'image') {
+              const img = new Image();
+              const url = URL.createObjectURL(file);
+              await new Promise(res => { img.onload = res; img.src = url; });
+              
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              if (targetFormat === 'jpg') {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+              }
+              ctx.drawImage(img, 0, 0);
+
+              let mime = targetFormat === 'jpg' ? 'image/jpeg' : targetFormat === 'webp' ? 'image/webp' : 'image/png';
+              const blob = await new Promise(res => canvas.toBlob(res, mime, quality));
+              const newFile = new File([blob], `${baseName}_converted.${targetFormat}`, { type: mime });
+              newConvertedItems.push({ id: Date.now() + '_' + Math.random().toString(36).substr(2,6), file: newFile, isConverted: true });
+            } else {
+              const text = await file.text();
+              let resultText = text;
+              let mime = 'text/plain';
+
+              if (targetFormat === 'json' && (cat === 'csv' || file.name.endsWith('.csv'))) {
+                const parsed = window.Papa.parse(text, { header: true });
+                resultText = JSON.stringify(parsed.data, null, 2);
+                mime = 'application/json';
+              } else if (targetFormat === 'csv' && file.name.endsWith('.json')) {
+                const parsed = JSON.parse(text);
+                resultText = window.Papa.unparse(Array.isArray(parsed) ? parsed : [parsed]);
+                mime = 'text/csv';
+              } else if (targetFormat === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text(doc.splitTextToSize(text, 180), 15, 20);
+                const pdfBlob = doc.output('blob');
+                newConvertedItems.push({ id: Date.now() + '_' + Math.random().toString(36).substr(2,6), file: new File([pdfBlob], `${baseName}_converted.pdf`, { type: 'application/pdf' }), isConverted: true });
+                continue;
+              }
+
+              const blob = new Blob([resultText], { type: mime });
+              newConvertedItems.push({ id: Date.now() + '_' + Math.random().toString(36).substr(2,6), file: new File([blob], `${baseName}_converted.${targetFormat}`, { type: mime }), isConverted: true });
+            }
+          }
+
+          setItems(prev => [...newConvertedItems, ...prev]);
+          showToast(`Converted ${newConvertedItems.length} file(s)!`);
+          setConvertItems(null);
+        } catch (e) {
+          alert('Conversion error: ' + e.message);
+        } finally {
+          setIsProcessing(false);
+        }
+      };
+
+      const handleBatchZip = async () => {
+        const selected = items.filter(i => selectedIds.includes(i.id));
+        if (selected.length === 0) return;
+        const zip = new window.JSZip();
+        selected.forEach(i => zip.file(i.file.name, i.file));
+        const blob = await zip.generateAsync({ type: 'blob' });
+        downloadBlob(blob, 'omni_files_export.zip');
+        showToast('Downloaded ZIP archive!');
+      };
+
+      const filteredItems = items.filter(i => 
+        i.file.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+      const totalSizeBytes = items.reduce((acc, curr) => acc + curr.file.size, 0);
+
+      return (
+        <div style={{ maxWidth: '1150px', margin: '0 auto' }}>
+          {/* Top Bar with Theme Selector */}
+          <header className="glass-panel animate-fade-in" style={{ padding: '16px 28px', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--accent-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icons.Layers />
+              </div>
+              <div>
+                <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 800 }}>
+                  OmniFile <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Studio</span>
+                </h1>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Icons.Shield /> 100% Client-Side Engine • Private & Instant
+                </p>
+              </div>
+            </div>
+
+            {/* Theme Selector Toolbar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.06)', padding: '4px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                {[
+                  { id: 'futuristic', name: '⚡ Cyberpunk' },
+                  { id: 'dark', name: '🌙 Dark Slate' },
+                  { id: 'light', name: '☀️ Light Modern' },
+                  { id: 'retro', name: '🕹️ 80s Synth' }
+                ].map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTheme(t.id)}
+                    style={{
+                      padding: '5px 10px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: theme === t.id ? 'var(--accent-gradient)' : 'transparent',
+                      color: theme === t.id ? '#ffffff' : 'var(--text-muted)',
+                      fontWeight: 600,
+                      fontSize: '0.78rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+
+              {items.length > 0 && (
+                <button className="btn btn-danger btn-sm" onClick={() => { setItems([]); setSelectedIds([]); }}>
+                  Clear Workspace
+                </button>
+              )}
+            </div>
+          </header>
+
+          {/* Live Workspace Stats Dashboard */}
+          {items.length > 0 && (
+            <div className="glass-panel animate-fade-in" style={{ padding: '14px 24px', marginBottom: '24px', display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '16px', fontSize: '0.85rem' }}>
+              <div>📦 Total Loaded: <strong style={{ color: 'var(--accent-cyan)' }}>{items.length} files</strong></div>
+              <div>💾 Memory Size: <strong style={{ color: 'var(--accent-cyan)' }}>{(totalSizeBytes / (1024 * 1024)).toFixed(2)} MB</strong></div>
+              <div>✨ Converted: <strong style={{ color: 'var(--accent-cyan)' }}>{items.filter(i => i.isConverted).length} files</strong></div>
+            </div>
+          )}
+
+          {/* Dropzone */}
+          <div 
+            className="glass-panel animate-fade-in"
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+            onDrop={e => { 
+              e.preventDefault(); 
+              e.stopPropagation();
+              if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFilesAdded(e.dataTransfer.files); 
+              }
+            }}
+            style={{ padding: '48px 24px', textAlign: 'center', cursor: 'pointer', border: '2px dashed var(--glass-border)', marginBottom: '28px' }}
+          >
+            <input ref={fileInputRef} type="file" multiple onChange={e => handleFilesAdded(e.target.files)} style={{ display: 'none' }} />
+            <div style={{ width: '64px', height: '64px', margin: '0 auto 16px', borderRadius: '50%', background: 'rgba(99, 102, 241, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icons.Upload />
+            </div>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '8px' }}>
+              Drag & drop files or click to browse
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+              Open, view, select, batch convert, or compress images, CSV, JSON, Markdown, PDF, Audio & Video.
+            </p>
+          </div>
+
+          {/* Workspace Search & Filter Toolbar */}
+          {items.length > 0 && (
+            <div className="glass-panel animate-fade-in" style={{ padding: '20px 24px', marginBottom: '28px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
+                {/* Search Bar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '6px 14px', borderRadius: '8px', border: '1px solid var(--glass-border)', flex: '1 1 250px' }}>
+                  <Icons.Search />
+                  <input 
+                    type="text" 
+                    placeholder="Search loaded files..." 
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-main)', outline: 'none', width: '100%', fontSize: '0.88rem' }}
+                  />
+                </div>
+
+                {/* View Layout Switcher & Batch Action Toolbar */}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {/* Grid vs List view toggle */}
+                  <div style={{ display: 'flex', gap: '2px', background: 'rgba(255,255,255,0.06)', padding: '3px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setViewLayout('grid')} style={{ background: viewLayout === 'grid' ? 'var(--accent-gradient)' : 'transparent', color: '#fff' }} title="Grid Card View">
+                      <Icons.Grid />
+                    </button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setViewLayout('list')} style={{ background: viewLayout === 'list' ? 'var(--accent-gradient)' : 'transparent', color: '#fff' }} title="Compact List View">
+                      <Icons.List />
+                    </button>
+                  </div>
+
+                  {selectedIds.length > 0 && (
+                    <>
+                      <button className="btn btn-primary btn-sm" onClick={() => setConvertItems(items.filter(i => selectedIds.includes(i.id)))}>
+                        <Icons.Refresh /> Convert Selected ({selectedIds.length})
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={handleBatchZip}>
+                        <Icons.Archive /> Download ZIP ({selectedIds.length})
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Grid / List Files Layout */}
+              {viewLayout === 'grid' ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+                  {filteredItems.map(item => {
+                    const isSelected = selectedIds.includes(item.id);
+                    const ext = (item.file.name.split('.').pop() || '').toLowerCase();
+                    const cat = getCategory(item.file);
+
+                    return (
+                      <div key={item.id} className="glass-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderColor: isSelected ? 'var(--accent-cyan)' : 'var(--glass-border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={isSelected} 
+                            onChange={() => setSelectedIds(prev => isSelected ? prev.filter(i => i !== item.id) : [...prev, item.id])} 
+                            style={{ accentColor: 'var(--accent-primary)', width: '18px', height: '18px', cursor: 'pointer' }} 
+                          />
+                          <span className="badge">{ext}</span>
+                        </div>
+
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px', wordBreak: 'break-word' }}>
+                          {item.file.name}
+                        </div>
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                          {(item.file.size / 1024).toFixed(1)} KB • {cat.toUpperCase()}
+                        </div>
+
+                        {/* Explicit Card Action Buttons */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setViewerItem(item)}>
+                              <Icons.Eye /> Open
+                            </button>
+                            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => { setConvertItems([item]); setTargetFormat(cat === 'image' ? 'png' : 'json'); }}>
+                              <Icons.Refresh /> Convert
+                            </button>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => downloadBlob(item.file, item.file.name)}>
+                              <Icons.Download /> Download
+                            </button>
+                            <button className="btn btn-danger btn-sm" onClick={() => setItems(prev => prev.filter(i => i.id !== item.id))} title="Delete">
+                              <Icons.Trash />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {filteredItems.map(item => {
+                    const isSelected = selectedIds.includes(item.id);
+                    const ext = (item.file.name.split('.').pop() || '').toLowerCase();
+                    const cat = getCategory(item.file);
+
+                    return (
+                      <div key={item.id} className="glass-card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 250px' }}>
+                          <input type="checkbox" checked={isSelected} onChange={() => setSelectedIds(prev => isSelected ? prev.filter(i => i !== item.id) : [...prev, item.id])} style={{ accentColor: 'var(--accent-primary)', width: '18px', height: '18px', cursor: 'pointer' }} />
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.file.name}</div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', gap: '8px' }}>
+                              <span>{(item.file.size / 1024).toFixed(1)} KB</span>
+                              <span className="badge">{ext}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => setViewerItem(item)}><Icons.Eye /> Open</button>
+                          <button className="btn btn-secondary btn-sm" onClick={() => { setConvertItems([item]); setTargetFormat(cat === 'image' ? 'png' : 'json'); }}><Icons.Refresh /> Convert</button>
+                          <button className="btn btn-primary btn-sm" onClick={() => downloadBlob(item.file, item.file.name)}><Icons.Download /> Download</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => setItems(prev => prev.filter(i => i.id !== item.id))}><Icons.Trash /></button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Converter Modal */}
+          {convertItems && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(5, 8, 16, 0.85)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+              <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '480px', padding: '28px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Convert {convertItems.length} File(s)</h3>
+                  <button onClick={() => setConvertItems(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><Icons.Close /></button>
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px', color: 'var(--text-muted)' }}>Choose Output Format:</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                    {getCategory(convertItems[0].file) === 'image' ? (
+                      ['png','jpg','webp','ico'].map(fmt => (
+                        <button 
+                          key={fmt} 
+                          type="button"
+                          onClick={() => setTargetFormat(fmt)}
+                          style={{ padding: '10px 6px', borderRadius: '8px', border: '1px solid', borderColor: targetFormat === fmt ? 'var(--accent-primary)' : 'var(--glass-border)', background: targetFormat === fmt ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)', color: '#fff', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer' }}
+                        >
+                          {fmt}
+                        </button>
+                      ))
+                    ) : (
+                      ['json','csv','pdf','txt'].map(fmt => (
+                        <button 
+                          key={fmt} 
+                          type="button"
+                          onClick={() => setTargetFormat(fmt)}
+                          style={{ padding: '10px 6px', borderRadius: '8px', border: '1px solid', borderColor: targetFormat === fmt ? 'var(--accent-primary)' : 'var(--glass-border)', background: targetFormat === fmt ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)', color: '#fff', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer' }}
+                        >
+                          {fmt}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {getCategory(convertItems[0].file) === 'image' && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '4px', color: 'var(--text-muted)' }}>
+                      <span>Quality Compression:</span>
+                      <span>{Math.round(quality * 100)}%</span>
+                    </div>
+                    <input type="range" min="0.1" max="1.0" step="0.05" value={quality} onChange={e => setQuality(parseFloat(e.target.value))} style={{ width: '100%', accentColor: 'var(--accent-primary)' }} />
+                  </div>
+                )}
+
+                <button className="btn btn-primary" style={{ width: '100%', padding: '12px' }} onClick={handleConvertAction} disabled={isProcessing}>
+                  {isProcessing ? 'Converting...' : `Convert to ${targetFormat.toUpperCase()}`}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* File Viewer Modal */}
+          {viewerItem && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(5, 8, 16, 0.92)', backdropFilter: 'blur(14px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
+              
+              {/* Floating Fixed Close Button */}
+              <button 
+                onClick={() => setViewerItem(null)} 
+                className="btn btn-danger"
+                style={{
+                  position: 'fixed',
+                  top: '20px',
+                  right: '24px',
+                  zIndex: 2010,
+                  boxShadow: '0 4px 20px rgba(239, 68, 68, 0.5)',
+                  fontWeight: 700,
+                  fontSize: '0.92rem'
+                }}
+                title="Close Viewer (or press Esc)"
+              >
+                <Icons.Close /> Close (Esc)
+              </button>
+
+              <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '950px', height: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+                {/* Header Controls */}
+                <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15,23,42,0.95)', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <strong style={{ fontSize: '1.05rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>
+                      {viewerItem.file.name}
+                    </strong>
+                    <span className="badge">{(viewerItem.file.size / 1024).toFixed(1)} KB</span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginRight: '110px' }}>
+                    {/* Zoom Buttons */}
+                    <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.06)', padding: '4px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                      <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px' }} onClick={() => setZoomScale(prev => Math.max(0.2, prev - 0.15))} title="Zoom Out">
+                        <Icons.ZoomOut />
+                      </button>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 600, padding: '4px 8px', color: 'var(--accent-cyan)' }}>
+                        {Math.round(zoomScale * 100)}%
+                      </span>
+                      <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px' }} onClick={() => setZoomScale(prev => Math.min(4.0, prev + 0.15))} title="Zoom In">
+                        <Icons.ZoomIn />
+                      </button>
+                      <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px' }} onClick={() => setZoomScale(1)} title="Reset">
+                        100%
+                      </button>
+                      {getCategory(viewerItem.file) === 'image' && (
+                        <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px' }} onClick={() => setRotation(prev => (prev + 90) % 360)} title="Rotate">
+                          <Icons.Rotate />
+                        </button>
+                      )}
+                    </div>
+
+                    <button className="btn btn-primary btn-sm" onClick={() => downloadBlob(viewerItem.file, viewerItem.file.name)}>
+                      <Icons.Download /> Download
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content View Area */}
+                <div 
+                  style={{ 
+                    padding: '24px', 
+                    overflow: 'auto',
+                    flex: 1, 
+                    background: 'rgba(9, 13, 22, 0.8)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative'
+                  }}
+                >
+                  {/* CSV Data Table */}
+                  {getCategory(viewerItem.file) === 'csv' && csvParsed ? (
+                    <div style={{ width: '100%', height: '100%', zoom: zoomScale }}>
+                      <div style={{ marginBottom: '12px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        CSV Data Table ({csvParsed.data.length} rows loaded)
+                      </div>
+                      <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              {csvParsed.meta.fields ? csvParsed.meta.fields.map((f, i) => <th key={i}>{f}</th>) : Object.keys(csvParsed.data[0] || {}).map((f, i) => <th key={i}>{f}</th>)}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {csvParsed.data.map((row, rIdx) => (
+                              <tr key={rIdx}>
+                                {Object.values(row).map((val, cIdx) => <td key={cIdx}>{val}</td>)}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : getCategory(viewerItem.file) === 'image' ? (
+                    <div style={{ textAlign: 'center', overflow: 'auto', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img 
+                        src={viewerContent} 
+                        style={{ 
+                          width: `${zoomScale * 100}%`,
+                          maxWidth: 'none',
+                          borderRadius: '12px', 
+                          boxShadow: 'var(--shadow-glow)',
+                          transform: `rotate(${rotation}deg)`,
+                          transition: 'width 0.15s ease, transform 0.15s ease'
+                        }} 
+                      />
+                    </div>
+                  ) : getCategory(viewerItem.file) === 'video' ? (
+                    <div style={{ textAlign: 'center', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                      <video controls autoPlay src={viewerContent} style={{ maxWidth: '100%', maxHeight: '72vh', borderRadius: '12px', boxShadow: 'var(--shadow-glow)' }} />
+                    </div>
+                  ) : getCategory(viewerItem.file) === 'audio' ? (
+                    <div style={{ textAlign: 'center', padding: '40px 0', width: '100%' }}>
+                      <audio controls src={viewerContent} style={{ width: '100%', maxWidth: '500px' }} />
+                    </div>
+                  ) : getCategory(viewerItem.file) === 'pdf' ? (
+                    <iframe src={viewerContent} style={{ width: '100%', height: '70vh', border: 'none', borderRadius: '8px' }} />
+                  ) : (
+                    <pre style={{
+                      width: '100%',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: `${0.86 * zoomScale}rem`,
+                      color: '#e2e8f0',
+                      background: '#0d1117',
+                      padding: '20px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--glass-border)',
+                      overflowX: 'auto',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word'
+                    }}>
+                      {viewerContent || 'Loading text file content...'}
+                    </pre>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Toast Notification */}
+          {toast && (
+            <div style={{ position: 'fixed', bottom: '24px', right: '24px', background: '#10b981', color: '#fff', padding: '12px 20px', borderRadius: '12px', fontWeight: 600, zIndex: 2000 }}>
+              {toast}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
